@@ -1,29 +1,34 @@
 import express from "express";
-import socketIo from "socket.io";
 import http from "http";
+import websocket from "websocket";
 const PORT = process.env.PORT || 5000;
 
 const app = express();
 const server = http.createServer(app);
+const SocketServer = websocket.server;
 
-const io = socketIo(server, {
-  cors: {
-    origin: "http://localhost:3000",
-  },
-});
+const wsServer = new SocketServer({ httpServer: server });
 
-let count = 1;
+const connections = [];
 
-io.on("connection", (socket) => {
-  console.log(`client connect with id ${socket.id}`);
+wsServer.on("request", (req) => {
+  console.log("Connection opened");
+  const connection = req.accept();
+  connections.push(connection);
 
-  setInterval(() => {
-    socket.emit("transcriptResponse", `Count is ${count}`);
-    count++;
-  }, 1000);
+  connection.on("message", (mes) => {
+    connections.forEach((element) => {
+      if (element != connection) {
+        connection.sendUTF(mes.utf8Data);
+      }
+    });
 
-  socket.on("transcriptReceived", (transcript) => {
-    socket.broadcast.emit("transcriptResponse", transcript);
+    console.log(mes);
+  });
+
+  connection.on("close", (resCode, des) => {
+    console.log("connection closed");
+    connections.splice(connections.indexOf(connection), 1);
   });
 });
 
