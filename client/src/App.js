@@ -84,7 +84,9 @@ function App() {
   };
 
   useEffect(() => {
-    client.current = new W3WebSocket("ws://10.0.0.38:5000");
+    client.current = new W3WebSocket(
+      "wss://lt-websocket-server.herokuapp.com/"
+    );
     client.current.onerror = () => {
       console.log("error");
     };
